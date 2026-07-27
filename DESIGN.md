@@ -219,7 +219,7 @@ Singleton matters here specifically: loading the model on every call would make 
 ---
 
 ## 5. Evaluation Plan
-**Section 5 · Owner: Integration/Evaluation Engineer**
+**Section 5 · Owner: Integration/Evaluation Engineer - Muhammad Maaz**
 
 ### 5.1 Overview
 
