@@ -9,7 +9,7 @@
 llm-eval-kit is a lightweight, pip-installable Python library that checks
 how good an AI's response is. You give it a prompt, the AI's response, and
 optionally the source text the response should be based on. It runs four
-checks — factual grounding, relevance, completeness, and refusal detection —
+checks factual grounding, relevance, completeness, and refusal detection 
 and returns a structured score as JSON. Everything runs locally: no
 internet needed after the first setup, no subscription, no external AI
 needed to do the checking. It's meant to be dropped into a CI pipeline, so
@@ -19,13 +19,13 @@ person reading through answers by hand.
 ---
 
 ## 2. Problem Statement
-**Section 2 · Owner: All three — write this together, not just you**
+**Section 2 · Owner: All three**
 
 Anyone who builds a chatbot or an AI writing tool eventually asks the same question: "how do I know if the model's answers are actually good?"
 
 Right now, most people just read a few answers and guess. There's no lightweight tool that checks an AI's response the same way every time, without needing the internet, another AI, or a paid subscription.
 
-llm-eval-kit fixes this. It's a small Python library you install with pip install llm-eval-kit. You give it a prompt, the AI's response, and (optionally) some source text, and it hands back a score explaining whether the response was good — and why — using fast, offline, non-AI methods.
+llm-eval-kit fixes this. It's a small Python library you install with pip install llm-eval-kit. You give it a prompt, the AI's response, and (optionally) some source text, and it hands back a score explaining whether the response was good and why using fast, offline, non-AI methods.
 
 ---
 
