@@ -402,14 +402,14 @@ guesswork.
 |---|---|---|---|
 | `evaluator.py` | Mahrukh Baig — Lead Engineer | `registry.py`, criteria modules | Week 2 |
 | `registry.py` | Mahrukh Baig — Lead Engineer | Python decorators | Week 2 |
-| `model_loader.py` | Warisha Arshad — Research/Implementation Engineer | sentence-transformers | Week 2 |
-| `criteria/factual_grounding.py` | Warisha Arshad — Research/Implementation Engineer | `model_loader.py`, cosine_similarity | Week 3 |
-| `criteria/relevance.py` | Warisha Arshad — Research/Implementation Engineer | `model_loader.py`, cosine_similarity | Week 3 |
-| `criteria/completeness.py` | Warisha Arshad — Research/Implementation Engineer | `model_loader.py` | Week 3 |
-| `criteria/refusal.py` | Warisha Arshad — Research/Implementation Engineer | Python `re` | Week 3 |
+| `model_loader.py` | Muhammad Maaz — Research/Implementation Engineer | sentence-transformers | Week 2 |
+| `criteria/factual_grounding.py` | Muhammad Maaz — Research/Implementation Engineer | `model_loader.py`, cosine_similarity | Week 3 |
+| `criteria/relevance.py` | Muhammad Maaz — Research/Implementation Engineer | `model_loader.py`, cosine_similarity | Week 3 |
+| `criteria/completeness.py` | Muhammad Maaz — Research/Implementation Engineer | `model_loader.py` | Week 3 |
+| `criteria/refusal.py` | Muhammad Maaz — Research/Implementation Engineer | Python `re` | Week 3 |
 | `cli.py` | Mahrukh Baig — Lead Engineer | `evaluator.py`, Typer | Week 4 |
-| `test_evaluator.py` | Muhammad Maaz — Integration/Evaluation Engineer | pytest, Evaluator | Week 4 |
-| `fixture_dataset.json` | Muhammad Maaz — Integration/Evaluation Engineer | Evaluation criteria | Week 4 |
+| `test_evaluator.py` | Warisha Arshad — Integration/Evaluation Engineer | pytest, Evaluator | Week 4 |
+| `fixture_dataset.json` | Warisha Arshad — Integration/Evaluation Engineer | Evaluation criteria | Week 4 |
 | `README.md` | Mahrukh Baig — Lead Engineer | Completed API | Week 5 |
 
 ---
