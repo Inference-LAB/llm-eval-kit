@@ -28,10 +28,7 @@ Right now, most people just read a few answers and guess. There's no
 lightweight tool that checks an AI's response the same way every time,
 without needing the internet, another AI, or a paid subscription.
 
-llm-eval-kit fixes this. It's a small Python library you install with
-`pip install llm-eval-kit`. You give it a prompt, the AI's response, and
-(optionally) some source text, and it hands back a score explaining whether
-the response was good — and why — using fast, offline, non-AI methods.
+llm-eval-kit fixes this. It's a small Python library you install with pip install llm-eval-kit. You give it a prompt, the AI's response, and (optionally) some source text, and it hands back a score explaining whether the response was good — and why — using fast, offline, non-AI methods.
 
 ---
 
@@ -306,92 +303,9 @@ expectation), which is why this is listed as a Known Limitation below.
 ---
 
 ## 5. Evaluation Plan
-**Section 5 · Owner: Integration/Evaluation Engineer — Warisha Arshad**
+**Section 5 · Owner: Integration/Evaluation Engineer — Maaz**
 
-### 5.1 Overview
-
-This section covers how llm-eval-kit itself gets tested, not what the four
-criteria measure that's Section 4. The job here is proving the library
-actually works: that `Evaluator` behaves correctly, that each criterion
-function honors the contract from Section 3.3, and that the whole thing
-runs fast enough and installs cleanly.
-
-Three pieces: a fixture dataset with known expected results, a pytest suite
-built against that dataset, and a performance benchmark checked against the
-2-second target from Section 8.
-
-### 5.2 Fixture Dataset (`fixture_dataset.json`)
-
-**What it is:** a set of `(prompt, response, context, expected_result)`
-cases where the correct output is already known before any test runs.
-Without this, there's nothing to assert against a test that just checks
-"did it return something" doesn't actually prove the score is right.
-
-**Why this is the hard part:** predicting, by hand, what each criterion
-should output before running it, means understanding all four criteria
-well enough to know the correct answer in advance. This depends directly on
-Section 4's known limitations the fixture cases are deliberately built to
-sit right on those limitations, not just easy cases.
-
-**Categories the fixture set needs to cover:**
-
-| Category | Purpose | Example |
-|---|---|---|
-| Clean pass | Confirms basic correctness | Accurate, well-grounded, on-topic response |
-| Known false positive | refusal_check's named trap | "I cannot stress enough how important this is..." |
-| Contradiction | factual_grounding's known limitation | Response with a flipped number or negation against context |
-| Off-topic | relevance's boundary case | Response that's fluent but answers a different question |
-| Partial answer | completeness's boundary case | Multi-part prompt, response covers only one part |
-| Missing context | Evaluator's skip-not-zero rule | factual_grounding requested with context=None |
-| Duplicate/invalid criterion name | Evaluator's fail-fast rule (Section 3.3) | Unknown criterion name passed to evaluate() |
-
-### 5.3 Test Suite (`test_evaluator.py`)
-
-**What it is:** pytest tests run against the fixture dataset, checking
-`Evaluator` and each criterion against the documented contract, not just
-against "does it crash."
-
-**Specifically testing:**
-- Each criterion function returns a score between 0.0 and 1.0, or None, never anything else
-- A skipped criterion (score: None) is excluded from the overall average, not treated as 0 called out explicitly in Section 3.3 as a common misunderstanding, so it gets its own test
-- Evaluator rejects an unknown criterion name immediately, before running anything (fail-fast, per Section 3.3)
-- Registering the same criterion name twice raises an error rather than silently overwriting — already partially verified in Section 3.2's registry output, this test locks that behavior in permanently
-- A criterion function that doesn't return a "score" key fails with a clear error, not an uncaught KeyError — this directly covers Risk 6 in Section 7
-
-Target: 90%+ coverage, per Section 8.3.
-
-### 5.4 Performance Benchmark
-
-**What it is:** a timed test running a full `evaluate()` call across all
-four criteria, checked against the 2-second target from Section 8.
-
-**Why it matters here specifically:** the embedding model singleton
-(Section 3.1 / Risk 2) is the main performance risk in this library. A
-regression test will assert the model is loaded exactly once across
-repeated `evaluate()` calls in the same session — if that singleton ever
-breaks and starts reloading per call, this test catches it immediately
-instead of someone noticing the library got slow weeks later.
-
-### 5.5 Deployment Verification
-
-**What it is:** confirming `pip install llm-eval-kit` actually works end to
-end on a clean environment, not just that the code runs inside the dev
-setup.
-
-**Checklist (maps directly to Section 8.2 / 8.3):**
-- `pip install llm-eval-kit` works on a clean Python 3.9+ environment
-- The four-line usage example from the Project Summary actually runs and returns a correct structured result
-- CLI command (`llm-eval evaluate --prompt ... --response ... --criteria ...`) runs and prints valid JSON
-- Every public function has a docstring, checked before merge, not after
-
-### 5.6 Known Limitation
-
-Predicting expected results by hand for the fixture dataset is inherently
-subjective for borderline cases — two people could reasonably disagree on
-the "correct" completeness score for a partially-answered prompt. This will
-be documented per-fixture with a short justification for the expected
-value, so disagreements are traceable to a stated reason rather than silent
-guesswork.
+*(currently empty — Maaz's to fill)*
 
 ---
 
@@ -408,8 +322,8 @@ guesswork.
 | `criteria/completeness.py` | Warisha Arshad — Research/Implementation Engineer | `model_loader.py` | Week 3 |
 | `criteria/refusal.py` | Warisha Arshad — Research/Implementation Engineer | Python `re` | Week 3 |
 | `cli.py` | Mahrukh Baig — Lead Engineer | `evaluator.py`, Typer | Week 4 |
-| `test_evaluator.py` | Muhammad Maaz — Integration/Evaluation Engineer | pytest, Evaluator | Week 4 |
-| `fixture_dataset.json` | Muhammad Maaz — Integration/Evaluation Engineer | Evaluation criteria | Week 4 |
+| `test_evaluator.py` | Maaz — Integration/Evaluation Engineer | pytest, Evaluator | Week 4 |
+| `fixture_dataset.json` | Maaz — Integration/Evaluation Engineer | Evaluation criteria | Week 4 |
 | `README.md` | Mahrukh Baig — Lead Engineer | Completed API | Week 5 |
 
 ---
@@ -465,18 +379,6 @@ contract defined in Section 3.3. Nothing currently stops a criterion
 function from breaking this contract for example, forgetting to include
 `"score"` at all which would crash `evaluate()` with an uncaught
 `KeyError` instead of a clear, useful error message.
-**Mitigation:** Flagging this for Integration Engineer to test deliberately,
-using a dummy criterion function that violates the contract on purpose. The
-result of that test will decide whether `Evaluator` needs an explicit
-defensive check (e.g. validating the returned dict shape) before Week 2 is
-considered complete.
-
-**Risk 7 (Integration/Evaluation Engineer):** Fixture dataset expected
-values are hand-predicted and inherently subjective for borderline cases
-(see Section 5.6).
-**Mitigation:** Mitigated by requiring a documented justification for each
-fixture's expected result, so disagreements are traceable to a stated
-reason rather than silent guesswork.
 
 ---
 
