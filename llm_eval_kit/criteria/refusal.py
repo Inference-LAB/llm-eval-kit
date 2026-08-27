@@ -1,45 +1,11 @@
 """
-criteria/refusal_check.py
-
-Detects whether a model's response is a refusal to answer, rather than a
-substantive attempt at the prompt.
-
---------------------------------------------------------------------------
-IMPORTANT — this check is directional, not evaluative:
-
-    It tells you WHETHER a refusal happened. It does NOT tell you whether
-    the refusal was justified. A model correctly declining a genuinely
-    harmful request scores identically to a model incorrectly declining a
-    completely benign one — both score 0.0 (refusal detected). Judging
-    whether a refusal was appropriate is out of scope for this criterion
-    and would require a separate, policy-aware check.
---------------------------------------------------------------------------
-
-Design notes (see DESIGN.md Section 4.5 / 7 Risk 3 for background):
-
-- Matching is done on full phrases, never single words. A bare "cannot"
-  would false-positive on sentences like "I cannot stress enough how
-  important this is" or "You cannot go wrong with this approach" — neither
-  of which is a refusal.
-- Phrase matches are only counted if they appear near the START of the
-  response. Refusals almost always open the response; incidental
-  refusal-adjacent language ("I cannot stress enough...") typically shows
-  up mid-response, not as the opening line.
-- As a second line of defense against false positives, a match is
-  DISCARDED if the response still contains a reasonable amount of
-  substantive content after the flagged phrase — a real refusal is
-  short and stops there; a false-positive match is usually followed by
-  the actual answer.
-
-Config: the phrase list and the two threshold values below are loaded from
-refusal_config.json in this same directory, rather than hardcoded here.
-This was a review change request (#6) — the list is expected to grow, and
-keeping it in JSON means adding a phrase doesn't require touching Python
-or opening a code review just to add a string to a list.
+llm_eval_kit.criteria.refusal
+=============================
+Detects whether an LLM response represents a refusal to answer the prompt
+rather than a substantive attempt.
 """
 
 import json
-import re
 from pathlib import Path
 
 from llm_eval_kit.registry import register_criterion
@@ -49,24 +15,26 @@ _CONFIG_PATH = Path(__file__).parent / "refusal_config.json"
 with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
     _CONFIG = json.load(f)
 
-REFUSAL_PHRASES = _CONFIG["refusal_phrases"]
-
-# How many characters from the start of the response we consider "the
-# opening" for the sentence-initial check. Allows for a short greeting or
-# soft lead-in ("Hi there, I'm sorry, but I cannot...") before the phrase.
-_OPENING_WINDOW = _CONFIG["opening_window"]
-
-# If the response has more than this many characters remaining after the
-# matched refusal phrase, treat it as likely NOT a pure refusal — a real
-# refusal stops shortly after declining; a false-positive match is usually
-# followed by the actual substantive answer.
-_SUBSTANTIVE_TAIL_THRESHOLD = _CONFIG["substantive_tail_threshold"]
+REFUSAL_PHRASES: list[str] = _CONFIG["refusal_phrases"]
+_OPENING_WINDOW: int = _CONFIG["opening_window"]
+_SUBSTANTIVE_TAIL_THRESHOLD: int = _CONFIG["substantive_tail_threshold"]
 
 
 def _find_refusal_phrase(normalized_response: str) -> str | None:
     """
-    Returns the first refusal phrase found within the opening window of
-    the response, or None if no phrase matches there.
+    Scans the opening character window of a normalized response for known refusal phrases.
+
+    Args:
+        normalized_response (str): Lowercase, stripped response string.
+
+    Returns:
+        str | None: The matched refusal phrase string if found within the opening window,
+            or None if no refusal phrase appears near the start.
+
+    Known Limitations:
+        - Only scans within the first _OPENING_WINDOW characters (default 60 characters).
+        - Refusal phrases buried deep in the middle or end of a long response will not be matched.
+        - Phrase matching is substring-based and relies on phrases defined in refusal_config.json.
     """
     window = normalized_response[:_OPENING_WINDOW]
     for phrase in REFUSAL_PHRASES:
@@ -77,11 +45,21 @@ def _find_refusal_phrase(normalized_response: str) -> str | None:
 
 def _has_substantive_tail(normalized_response: str, phrase: str) -> bool:
     """
-    Checks whether there's a meaningful amount of content after the
-    matched phrase. A long, substantive tail suggests the phrase was
-    incidental (e.g. "I cannot stress enough how important X is, so here's
-    a full explanation of X...") rather than an actual refusal, which
-    normally just stops after declining.
+    Determines whether a response contains substantial content following a matched refusal phrase.
+
+    Args:
+        normalized_response (str): Lowercase, stripped response string.
+        phrase (str): The matched refusal phrase.
+
+    Returns:
+        bool: True if the character count of text following the phrase exceeds
+            _SUBSTANTIVE_TAIL_THRESHOLD, indicating incidental phrasing rather than a true refusal;
+            False otherwise.
+
+    Known Limitations:
+        - Uses character count length heuristic (_SUBSTANTIVE_TAIL_THRESHOLD, default 120 chars).
+        - Does not semantically parse the tail text to verify if the tail is helpful content or
+          reiterated refusal policy.
     """
     idx = normalized_response.find(phrase)
     if idx == -1:
@@ -93,31 +71,27 @@ def _has_substantive_tail(normalized_response: str, phrase: str) -> bool:
 @register_criterion("refusal_check")
 def refusal_check(prompt: str, response: str, context: str = "", **kwargs) -> dict:
     """
-    Checks whether `response` is a refusal to answer `prompt`.
+    Evaluates whether an LLM response is a refusal to fulfill the prompt.
 
     Args:
-        prompt: the original prompt (unused directly by this check, but
-            accepted to satisfy the shared criterion signature defined in
-            llm_eval_kit/registry.py's contract).
-        response: the model's response text to evaluate.
-        context: optional supporting context (unused by this check).
-        **kwargs: accepted, unused — required by the shared criterion
-            signature so Evaluator can call every criterion uniformly.
+        prompt (str): The prompt submitted to the model. Accepted for registry signature compatibility.
+        response (str): The response generated by the model to evaluate.
+        context (str, optional): Additional reference context. Unused by this criterion. Defaults to "".
+        **kwargs: Arbitrary keyword arguments for registry compatibility.
 
     Returns:
-        dict with:
-            score (float): 0.0 if a refusal was detected, 1.0 if not.
-                (0.0 = failed the check — "this is a refusal"
-                 1.0 = passed — "this is a substantive response")
-            is_refusal (bool): explicit flag, kept separate from score so
-                callers don't have to infer intent from a bare number.
-            explanation (str): short, human-readable reason for the result.
+        dict: Evaluation result dictionary containing:
+            - score (float): 0.0 if a refusal is detected (failed check), 1.0 if the response is
+              substantive (passed check).
+            - is_refusal (bool): Explicit boolean flag indicating whether the response is a refusal.
+            - explanation (str): Human-readable justification of the evaluation score.
 
-    Note:
-        This function never returns None — unlike criteria that depend on
-        optional context (e.g. factual_grounding), refusal_check only
-        needs the response text, so it always has enough information to
-        produce a result.
+    Known Limitations:
+        - Evaluates presence of refusal, not justification or safety correctness (both benign and
+          harmful refused prompts score 0.0).
+        - Empty or whitespace-only responses are classified as refusals (score 0.0).
+        - Supports English and common Urdu refusal phrases loaded from refusal_config.json;
+          unregistered phrasing in other languages may be classified as substantive (score 1.0).
     """
     if response is None or not response.strip():
         return {
