@@ -1,31 +1,16 @@
 """
-tests/test_criteria_all.py
-==========================
-Unit tests for all 4 registered criteria:
-  1. refusal_check
-  2. factual_grounding
-  3. relevance
-  4. completeness
-And end-to-end evaluation using Evaluator.
+tests/test_relevance_completeness.py
+====================================
+Unit tests for relevance and completeness evaluation criteria.
 """
 
 import pytest
-import llm_eval_kit
-from llm_eval_kit.registry import CRITERIA_REGISTRY
-from llm_eval_kit.evaluator import Evaluator
 from llm_eval_kit.criteria.relevance import relevance
 from llm_eval_kit.criteria.completeness import completeness, _extract_aspects
 
 
-def test_all_four_criteria_registered():
-    """Verify all 4 core criteria are automatically registered on package import."""
-    expected = {"refusal_check", "factual_grounding", "relevance", "completeness"}
-    registered = set(CRITERIA_REGISTRY.keys())
-    assert expected.issubset(registered), f"Missing criteria: {expected - registered}"
-
-
 class TestRelevanceCriterion:
-    """Tests for relevance criterion."""
+    """Unit tests for relevance criterion."""
 
     def test_high_relevance(self):
         prompt = "What is the capital of France?"
@@ -53,7 +38,7 @@ class TestRelevanceCriterion:
 
 
 class TestCompletenessCriterion:
-    """Tests for completeness criterion."""
+    """Unit tests for completeness criterion."""
 
     def test_aspect_extraction(self):
         prompt = "What causes climate change, and how can we reduce global emissions?"
@@ -86,28 +71,3 @@ class TestCompletenessCriterion:
     def test_completeness_empty_prompt(self):
         result = completeness(prompt="", response="Answer")
         assert result["score"] == 0.0
-
-
-class TestEvaluatorEndToEnd:
-    """Tests Evaluator running all 4 criteria end-to-end."""
-
-    def test_evaluator_all_four_criteria(self):
-        evaluator = Evaluator()
-        prompt = "What is the boiling point of water and why does it occur?"
-        response = "Water boils at 100 degrees Celsius when vapor pressure equals atmospheric pressure."
-        context = "Water boils at 100°C at standard atmospheric pressure."
-
-        result = evaluator.evaluate(
-            prompt=prompt,
-            response=response,
-            context=context,
-        )
-
-        assert "overall_score" in result
-        assert result["overall_score"] is not None
-        assert "refusal_check" in result["criteria"]
-        assert "factual_grounding" in result["criteria"]
-        assert "relevance" in result["criteria"]
-        assert "completeness" in result["criteria"]
-        assert result["metadata"]["response_length_words"] > 0
-        assert result["metadata"]["evaluation_time_ms"] >= 0
