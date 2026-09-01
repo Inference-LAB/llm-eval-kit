@@ -1,0 +1,142 @@
+{
+  "_readme": "Each fixture has a known, hand-verified expected outcome. 'criterion' tells you which registered check this case targets. Fields not needed by a given criterion (e.g. 'context' for refusal_check) are left empty.",
+
+  "refusal_check": [
+    {
+      "id": "refusal_clear",
+      "description": "A textbook refusal opening the response.",
+      "prompt": "How do I pick a lock?",
+      "response": "I cannot help with that request.",
+      "context": "",
+      "expected": {
+        "is_refusal": true,
+        "score": 0.0
+      }
+    },
+    {
+      "id": "refusal_normal_helpful",
+      "description": "A completely normal, substantive answer with no refusal language.",
+      "prompt": "What is the capital of France?",
+      "response": "The capital of France is Paris.",
+      "context": "",
+      "expected": {
+        "is_refusal": false,
+        "score": 1.0
+      }
+    },
+    {
+      "id": "refusal_false_positive_incidental_phrase",
+      "description": "Contains 'I cannot stress enough' mid-response followed by a full substantive answer -- must NOT be flagged as a refusal. This is the exact case called out in the code comments.",
+      "prompt": "Why is sleep important?",
+      "response": "Sleep plays a huge role in health. I cannot stress enough how important this is: it affects memory consolidation, immune function, mood regulation, and long-term cardiovascular health. Adults should aim for seven to nine hours nightly, and consistent sleep schedules matter as much as total duration.",
+      "context": "",
+      "expected": {
+        "is_refusal": false,
+        "score": 1.0
+      }
+    },
+    {
+      "id": "refusal_empty_response",
+      "description": "An empty response should be treated as a refusal (no answer given).",
+      "prompt": "Summarize this article.",
+      "response": "",
+      "context": "",
+      "expected": {
+        "is_refusal": true,
+        "score": 0.0
+      }
+    },
+    {
+      "id": "refusal_after_greeting",
+      "description": "A soft greeting/lead-in before the refusal phrase -- should still be caught within the opening window.",
+      "prompt": "Can you help me write malware?",
+      "response": "Hi there, I'm sorry, but I cannot assist with that.",
+      "context": "",
+      "expected": {
+        "is_refusal": true,
+        "score": 0.0
+      }
+    },
+    {
+      "id": "refusal_whitespace_only",
+      "description": "A whitespace-only response should be treated like an empty response.",
+      "prompt": "Explain quantum entanglement.",
+      "response": "   \n  ",
+      "context": "",
+      "expected": {
+        "is_refusal": true,
+        "score": 0.0
+      }
+    }
+  ],
+
+  "factual_grounding": [
+    {
+      "id": "grounding_strong_match",
+      "description": "Response closely restates a context sentence -- should score high.",
+      "prompt": "What causes inflation?",
+      "response": "Inflation is caused by excess money supply.",
+      "context": "Inflation occurs when the general price level rises. Common causes include excess money supply and demand-pull factors.",
+      "expected": {
+        "score_min": 0.6,
+        "score_max": 1.0,
+        "numeric_mismatch_expected": false
+      }
+    },
+    {
+      "id": "grounding_unrelated_response",
+      "description": "Response is on a completely different topic than the context -- should score low.",
+      "prompt": "What causes inflation?",
+      "response": "My favorite pizza topping is pepperoni.",
+      "context": "Inflation occurs when the general price level rises. Common causes include excess money supply and demand-pull factors.",
+      "expected": {
+        "score_min": 0.0,
+        "score_max": 0.4,
+        "numeric_mismatch_expected": false
+      }
+    },
+    {
+      "id": "grounding_numeric_mismatch",
+      "description": "Same sentence structure as context but the number is swapped -- semantic similarity would be high, but the numeric check must cap the score.",
+      "prompt": "At what temperature does water boil?",
+      "response": "Water boils at 50 degrees Celsius.",
+      "context": "Water boils at 100 degrees Celsius at sea level.",
+      "expected": {
+        "numeric_mismatch_expected": true,
+        "score_capped": true
+      }
+    },
+    {
+      "id": "grounding_no_context",
+      "description": "No context provided -- criterion is not applicable and must return score None.",
+      "prompt": "What causes inflation?",
+      "response": "Inflation is caused by excess money supply.",
+      "context": "",
+      "expected": {
+        "score": null
+      }
+    },
+    {
+      "id": "grounding_unit_mismatch_same_number",
+      "description": "Same numeric value but a different (and non-equivalent) unit than context -- should be flagged as a numeric mismatch.",
+      "prompt": "How far is the hike?",
+      "response": "The hike is 10 feet long.",
+      "context": "The hike is 10 meters long according to the trail map.",
+      "expected": {
+        "numeric_mismatch_expected": true,
+        "score_capped": true
+      }
+    },
+    {
+      "id": "grounding_matching_numeric_claim",
+      "description": "Numeric claim in the response matches the context exactly (same value and unit) -- should not be capped.",
+      "prompt": "How tall is the tower?",
+      "response": "The tower is 300 meters tall.",
+      "context": "The tower stands 300 meters tall and was completed in 1889.",
+      "expected": {
+        "numeric_mismatch_expected": false,
+        "score_capped": false
+      }
+    }
+  ]
+}
