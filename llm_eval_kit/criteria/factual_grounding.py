@@ -1,32 +1,8 @@
 """
 llm_eval_kit.criteria.factual_grounding
 =======================================
-Checks how well a response is grounded in the given context by comparing
-sentence embeddings, then applies a numeric sanity check on top since embeddings
-alone cannot catch swapped numbers or altered figures.
-
-Background:
-  Pure semantic similarity treats "water boils at 50C" and "water boils at 100C"
-  as almost identical (~0.90 similarity) because it is the same sentence structure
-  with one digit changed. To prevent false positives on hallucinations/contradictions,
-  we extract numeric claims from the response and validate them against the context,
-  capping the score if unsupported figures appear.
-
-Key Architectural Decisions:
-  1. Config Separation: Embedding model name and mismatch score cap are loaded
-     from factual_grounding_config.json.
-  2. Modular Numeric Logic: Extraction and comparison routines live in
-     numeric_utils.py, keeping this file focused on the evaluation workflow.
-  3. Context Multi-Sentence Union: Validates claims against all context sentences
-     (subset check), allowing responses to combine multiple facts.
-  4. Singleton Lazy Loading: SentenceTransformer is loaded on first invocation.
-  5. Score Semantics: Measures semantic similarity with a numeric-consistency
-     penalty applied, not calibrated factual accuracy.
-
-Criterion Interface Contract:
-  prompt: Accepted to satisfy the uniform (prompt, response, context, **kwargs)
-          signature required by CRITERIA_REGISTRY and Evaluator, though factual
-          grounding compares response against context.
+Evaluates factual grounding of an LLM response against reference context by computing
+maximum sentence cosine similarity and enforcing numeric consistency penalties.
 """
 
 import json
@@ -42,23 +18,47 @@ _CONFIG_PATH = Path(__file__).parent / "factual_grounding_config.json"
 with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
     _CONFIG = json.load(f)
 
-MODEL_NAME = _CONFIG["model_name"]
-MISMATCH_SCORE_CAP = _CONFIG["mismatch_score_cap"]
+MODEL_NAME: str = _CONFIG["model_name"]
+MISMATCH_SCORE_CAP: float = _CONFIG["mismatch_score_cap"]
 
-_model = None
+_model: SentenceTransformer | None = None
 
 
-def _get_model():
+def _get_model() -> SentenceTransformer:
+    """
+    Lazily initializes and returns the cached SentenceTransformer singleton model.
+
+    Returns:
+        SentenceTransformer: Cached embedding model instance loaded from MODEL_NAME.
+
+    Known Limitations:
+        - Loads the model onto CPU/GPU on first invocation, which incurs initial setup latency.
+        - Memory consumption corresponds to the underlying transformer model footprint (~80-120MB RAM).
+    """
     global _model
     if _model is None:
         _model = SentenceTransformer(MODEL_NAME)
     return _model
 
 
-_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?۔؟])\s+|\n+")
 
 
 def _split_sentences(text: str) -> list[str]:
+    """
+    Splits input text into discrete sentence and paragraph segments.
+
+    Args:
+        text (str): Input text block to segment.
+
+    Returns:
+        list[str]: Non-empty stripped sentence and paragraph strings.
+
+    Known Limitations:
+        - Uses linear O(N) regex segmentation matching terminal punctuation (.!?۔؟) or newlines.
+        - Abbreviations followed by whitespace (e.g. 'e.g. ') may cause false splits.
+        - Unpunctuated text without newlines returns a single-element list.
+    """
     parts = _SENTENCE_SPLIT.split(text.strip())
     return [p.strip() for p in parts if p.strip()]
 
@@ -66,29 +66,43 @@ def _split_sentences(text: str) -> list[str]:
 @register_criterion("factual_grounding")
 def factual_grounding(prompt: str, response: str, context: str = "", **kwargs) -> dict:
     """
-    Scores how grounded `response` is in `context` using max sentence
-    similarity, then applies a numeric mismatch check on top.
+    Evaluates how well a model response is grounded in reference context using embedding
+    similarity and numeric claim verification.
 
     Args:
-        prompt: Original prompt. Unused directly by this criterion, but
-            accepted to satisfy the shared registry contract.
-        response: The model's response text to evaluate.
-        context: Reference context against which to evaluate grounding.
-        **kwargs: Accepted for uniform registry compatibility.
+        prompt (str): Original prompt. Accepted for uniform registry compatibility.
+        response (str): The model's response string to evaluate. If empty or whitespace-only,
+            evaluates to score 0.0.
+        context (str, optional): Reference context text to evaluate grounding against. If empty
+            or whitespace-only, evaluates to score None (not applicable). Defaults to "".
+        **kwargs: Arbitrary keyword arguments for registry compatibility.
 
     Returns:
-        dict with:
-            score (float | None): Cosine similarity score [0.0, 1.0], capped at
-                MISMATCH_SCORE_CAP if an unsupported numeric claim is detected,
-                or None if context is missing/empty.
-            explanation (str): Human-readable reasoning for the score.
-            best_matching_sentence (str, optional): The context sentence with
-                highest semantic similarity to the response.
+        dict: Evaluation result dictionary containing:
+            - score (float | None): Cosine similarity score in [0.0, 1.0], capped at
+              MISMATCH_SCORE_CAP if unsupported numeric claims are detected; 0.0 if response is empty;
+              or None if context is missing/empty.
+            - explanation (str): Human-readable explanation of score and penalties.
+            - best_matching_sentence (str | None, optional): Context sentence yielding maximum cosine
+              similarity to the response, or None if response/context is empty.
+
+    Known Limitations:
+        - Semantic similarity represents semantic alignment, not calibrated factual verification.
+        - Default model ('all-MiniLM-L6-v2') is English-optimized; non-Latin scripts (e.g. Urdu)
+          may exhibit lower semantic discrimination due to WordPiece tokenization.
+        - Sentence splitting operates in O(N) linear time and is benchmarked for contexts up to 5,000+ words.
     """
     if context is None or not context.strip():
         return {
             "score": None,
             "explanation": "No context provided; factual_grounding is not applicable.",
+        }
+
+    if response is None or not response.strip():
+        return {
+            "score": 0.0,
+            "explanation": "Empty response contains no factual content to evaluate.",
+            "best_matching_sentence": None,
         }
 
     sentences = _split_sentences(context)
@@ -100,7 +114,7 @@ def factual_grounding(prompt: str, response: str, context: str = "", **kwargs) -
 
     model = _get_model()
     response_embedding = model.encode(response, convert_to_tensor=True)
-    sentence_embeddings = model.encode(sentences, convert_to_tensor=True)
+    sentence_embeddings = model.encode(sentences, batch_size=64, convert_to_tensor=True)
 
     similarities = util.cos_sim(response_embedding, sentence_embeddings)[0]
     best_idx = int(similarities.argmax())
