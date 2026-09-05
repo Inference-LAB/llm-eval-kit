@@ -37,7 +37,7 @@ pip install llm-eval-kit
 Here is a 4-line example demonstrating how to run the evaluator:
 
 ```python
-from llm_eval_kit.evaluator import Evaluator
+from llm_eval_kit import Evaluator
 
 # Initialize the evaluator
 evaluator = Evaluator()
@@ -47,12 +47,12 @@ prompt = "What is the boiling point of water at sea level?"
 response = "Water boils at 100 degrees Celsius at sea level."
 context = "At sea level, the boiling point of water is 100°C (212°F)."
 
-# Run the evaluation
+# Run the evaluation (specify criteria or omit to run all registered criteria)
 result = evaluator.evaluate(
     prompt=prompt,
     response=response,
     context=context,
-    criteria=["refusal_check", "factual_grounding"]
+    criteria=["refusal_check", "factual_grounding", "relevance", "completeness"]
 )
 
 # Output is a structured Python dictionary
@@ -63,7 +63,7 @@ print(json.dumps(result, indent=2))
 ### Example Output JSON
 ```json
 {
-  "overall_score": 1.0,
+  "overall_score": 0.95,
   "criteria": {
     "refusal_check": {
       "score": 1.0,
@@ -71,9 +71,19 @@ print(json.dumps(result, indent=2))
       "explanation": "No refusal phrase detected near the start of the response."
     },
     "factual_grounding": {
-      "score": 0.985,
+      "score": 0.88,
       "explanation": "Score reflects semantic similarity with a numeric-consistency penalty applied, not calibrated factual accuracy. Response numeric claims match or are supported by the context.",
       "best_matching_sentence": "At sea level, the boiling point of water is 100°C (212°F)."
+    },
+    "relevance": {
+      "score": 0.92,
+      "explanation": "Response is highly relevant and directly addresses the prompt topic."
+    },
+    "completeness": {
+      "score": 1.0,
+      "explanation": "Response covers all key aspects requested in the prompt.",
+      "covered_aspects": ["boiling point of water at sea level"],
+      "total_aspects": 1
     }
   },
   "metadata": {
@@ -116,11 +126,17 @@ Measures whether the response's claims are semantically aligned and supported by
 ### 2. Refusal Detection (`refusal_check`)
 Identifies if the model declined to answer the prompt.
 - **Smart Tail Filtering:** If a refusal-like phrase is detected at the start of a response but is followed by a substantial tail of actual content (exceeding `120` characters), it is treated as incidental language rather than a refusal.
-- **Configurable:** Refusal phrase lists, checking windows, and tail thresholds are loaded from `refusal_config.json`.
+- **Configurable:** Refusal phrase lists, checking windows, and tail thresholds are loaded from `refusal_config.json`. Supports multilingual variants (including Urdu refusal heuristics).
 
-### 3. Relevance (`relevance`) & Completeness (`completeness`) *(Under Development)*
-- **Relevance:** Computes cosine similarity between the prompt and the response.
-- **Completeness:** Heuristically splits the prompt into aspects (using delimiters like "and", commas, etc.) and calculates whether the response covers each aspect.
+### 3. Relevance (`relevance`)
+Evaluates semantic relevance between the prompt and the response.
+- **Dense Cosine Similarity:** Encodes the prompt and response with `all-MiniLM-L6-v2` and computes cosine similarity.
+- **Defensive Pre-Encoding:** Handles empty or whitespace prompts/responses safely without unnecessary transformer calls.
+
+### 4. Completeness (`completeness`)
+Evaluates whether all sub-questions or clauses in the user's prompt were addressed by the response.
+- **Aspect Extraction:** Decomposes complex prompts into semantic aspects and checks coverage against response sentences.
+- **Granular Accounting:** Returns detailed breakdowns (`covered_aspects`, `total_aspects`, and explanation).
 
 ---
 

@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-eval-kit"
+version = "0.1.0"
+authors = [
+    { name = "Mahrukh Baig", email = "mahrukh@example.com" }
+]
+description = "A lightweight, offline Python library for scoring LLM response quality."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "sentence-transformers>=2.2.0",
+    "scikit-learn>=1.0.0",
+    "typer>=0.9.0",
+]
+
+[project.scripts]
+llm-eval = "llm_eval_kit.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["llm_eval_kit*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json"]
+
