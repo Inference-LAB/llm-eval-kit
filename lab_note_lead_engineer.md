@@ -12,4 +12,4 @@ Modern LLM evaluation workflows routinely depend on third-party "LLM-as-a-judge"
 
 Mahrukh Baig  
 Lead Engineer  
-
+INFERENCE Lab Engineering Fellowship, Cohort 01

@@ -60,6 +60,9 @@ import json
 print(json.dumps(result, indent=2))
 ```
 
+> **Note on Evaluation Cost & Latency:**
+> Omitting the `criteria` argument (or passing `criteria=None`) executes all registered criteria in `CRITERIA_REGISTRY`. As additional criteria are added in the future (especially compute-heavy transformer models or multi-aspect passes), evaluating all criteria by default will proportionally increase the evaluation latency and resource cost. In production or latency-critical pipelines, it is best practice to explicitly specify only the criteria you need.
+
 ### Example Output JSON
 ```json
 {
@@ -112,7 +115,7 @@ llm-eval evaluate \
 - `--prompt` (Required): The original prompt sent to the LLM.
 - `--response` (Required): The LLM response to evaluate.
 - `--context` (Optional): Reference text for grounding.
-- `--criteria` (Optional): Repeating option to choose specific criteria (defaults to all registered criteria).
+- `--criteria` (Optional): Repeating option to choose specific criteria (defaults to all registered criteria). *Note: Omitting this option runs all criteria in the registry. As new criteria are added in the future, evaluating all criteria by default will increase latency and compute cost.*
 
 ---
 
@@ -180,6 +183,9 @@ def my_check(prompt: str, response: str, context: str = "", **kwargs) -> dict:
 ```python
 from llm_eval_kit.criteria import my_check
 ```
+
+#### Evaluation Latency & Future Criteria
+Because `Evaluator.evaluate()` defaults to executing all registered criteria when `criteria` is omitted, adding future criteria (particularly those requiring deep embedding models or multi-aspect passes) will increase evaluation latency and resource consumption for default runs. In production workflows or CI environments with strict latency budgets, callers should pass an explicit list of required criteria (e.g., `criteria=["refusal_check"]`).
 
 ---
 

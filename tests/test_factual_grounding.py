@@ -17,6 +17,12 @@ import pytest
 
 from llm_eval_kit.criteria.factual_grounding import factual_grounding
 
+# Mark all tests in this file as integration tests since factual_grounding
+# requires loading the sentence-transformers model (all-MiniLM-L6-v2).
+# Regular test suites can exclude these using `pytest -m "not integration"`
+# to run fast and offline without downloading models.
+pytestmark = pytest.mark.integration
+
 FIXTURES_PATH = Path(__file__).parent / "fixtures" / "criteria_fixtures.json"
 
 with open(FIXTURES_PATH, "r", encoding="utf-8") as f:

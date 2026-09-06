@@ -32,3 +32,9 @@ include = ["llm_eval_kit*"]
 [tool.setuptools.package-data]
 "*" = ["*.json"]
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests (requiring model downloads or pre-cached models)",
+    "performance: marks tests as performance benchmarks (measuring latency or resource usage)",
+]
+

@@ -19,6 +19,20 @@ from llm_eval_kit.registry import CRITERIA_REGISTRY, register_criterion
 import llm_eval_kit.criteria.refusal  # noqa: F401 -- ensures refusal_check is registered
 
 
+@pytest.fixture(autouse=True)
+def restore_criteria_registry():
+    """Takes a snapshot of the global CRITERIA_REGISTRY before each test
+    and restores it upon completion.
+
+    This ensures tests registering ad-hoc or mock criteria do not leak
+    state into subsequent tests, making the suite order-independent.
+    """
+    original_registry = dict(CRITERIA_REGISTRY)
+    yield
+    CRITERIA_REGISTRY.clear()
+    CRITERIA_REGISTRY.update(original_registry)
+
+
 def test_evaluate_runs_default_criteria_when_none_given():
     """If criteria=None, Evaluator should run every registered criterion."""
     ev = Evaluator()
