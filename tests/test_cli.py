@@ -60,14 +60,17 @@ def test_cli_evaluate_multiple_criteria_flags():
         app,
         [
             "evaluate",
-            "--prompt", "Hello",
-            "--response", "Hi there!",
+            "--prompt", "What is the capital of France?",
+            "--response", "Paris is the capital of France.",
+            "--context", "Paris is the capital and most populous city of France.",
             "--criteria", "refusal_check",
+            "--criteria", "factual_grounding",
         ],
     )
     assert result.exit_code == 0
     output = json.loads(result.stdout)
     assert "refusal_check" in output["criteria"]
+    assert "factual_grounding" in output["criteria"]
 
 
 def test_cli_evaluate_missing_required_prompt_fails():

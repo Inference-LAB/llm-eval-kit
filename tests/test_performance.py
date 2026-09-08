@@ -26,12 +26,22 @@ completeness are added and imported, they'll automatically be included
 here too -- no change needed to this file.
 """
 
+import os
 import time
+
+import pytest
 
 from llm_eval_kit.evaluator import Evaluator
 from llm_eval_kit.registry import CRITERIA_REGISTRY
 
-PERFORMANCE_TARGET_MS = 2000
+# Mark all tests in this module as performance benchmarks and integration tests.
+# CI runners can skip these using `pytest -m "not performance"` or `pytest -m "not integration"`.
+pytestmark = [pytest.mark.performance, pytest.mark.integration]
+
+# Target evaluation latency per DESIGN.md Section 8 (default: 2000ms).
+# Can be overridden via the PERFORMANCE_TARGET_MS environment variable to prevent
+# flakiness across varied or resource-constrained CI runner environments.
+PERFORMANCE_TARGET_MS = int(os.getenv("PERFORMANCE_TARGET_MS", "2000"))
 
 
 def test_full_evaluation_under_two_second_target():
