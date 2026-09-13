@@ -7,6 +7,7 @@ rather than a substantive attempt.
 
 import json
 from pathlib import Path
+from typing import Optional
 
 from llm_eval_kit.registry import register_criterion
 
@@ -20,7 +21,7 @@ _OPENING_WINDOW: int = _CONFIG["opening_window"]
 _SUBSTANTIVE_TAIL_THRESHOLD: int = _CONFIG["substantive_tail_threshold"]
 
 
-def _find_refusal_phrase(normalized_response: str) -> str | None:
+def _find_refusal_phrase(normalized_response: str) -> Optional[str]:
     """
     Scans the opening character window of a normalized response for known refusal phrases.
 

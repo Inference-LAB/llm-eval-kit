@@ -7,6 +7,7 @@ Utility module for extracting, normalizing, and validating numeric claims
 
 import math
 import re
+from typing import Optional, Tuple
 
 _ONES: dict[str, int] = {
     "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
@@ -78,7 +79,7 @@ def normalize_unit(raw_unit: str) -> str:
     return _UNIT_SYNONYMS.get(raw_unit.lower(), raw_unit.lower())
 
 
-def words_to_number(tokens: list[str], start_idx: int) -> tuple[float | None, int]:
+def words_to_number(tokens: list[str], start_idx: int) -> Tuple[Optional[float], int]:
     """
     Parses a contiguous sequence of spelled-out English number words starting at a specified token index.
 

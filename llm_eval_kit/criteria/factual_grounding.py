@@ -8,6 +8,7 @@ maximum sentence cosine similarity and enforcing numeric consistency penalties.
 import json
 from pathlib import Path
 import re
+from typing import Optional
 from sentence_transformers import SentenceTransformer, util
 
 from llm_eval_kit.criteria.numeric_utils import has_numeric_mismatch
@@ -21,7 +22,7 @@ with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
 MODEL_NAME: str = _CONFIG["model_name"]
 MISMATCH_SCORE_CAP: float = _CONFIG["mismatch_score_cap"]
 
-_model: SentenceTransformer | None = None
+_model: Optional[SentenceTransformer] = None
 
 
 def _get_model() -> SentenceTransformer:

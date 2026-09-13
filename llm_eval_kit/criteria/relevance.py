@@ -7,6 +7,7 @@ by computing sentence embedding cosine similarity.
 
 import json
 from pathlib import Path
+from typing import Optional
 from sentence_transformers import SentenceTransformer, util
 
 from llm_eval_kit.registry import register_criterion
@@ -18,7 +19,7 @@ with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
 
 MODEL_NAME: str = _CONFIG["model_name"]
 
-_model: SentenceTransformer | None = None
+_model: Optional[SentenceTransformer] = None
 
 
 def _get_model() -> SentenceTransformer:
