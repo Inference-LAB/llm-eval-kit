@@ -22,6 +22,12 @@ dependencies = [
     "typer>=0.9.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
 [project.scripts]
 llm-eval = "llm_eval_kit.cli:app"
 
