@@ -25,7 +25,7 @@ Designed to fit seamlessly into CI/CD pipelines, this library helps automate pro
 Install the package via `pip` (requires Python 3.9+):
 
 ```bash
-pip install llm-eval-kit
+pip install inferencelab-llm-eval-kit
 ```
 
 *Note: On first run, the library will automatically download the local embedding model `all-MiniLM-L6-v2` (approx. 90MB) to your local cache. All subsequent executions run entirely offline.*
