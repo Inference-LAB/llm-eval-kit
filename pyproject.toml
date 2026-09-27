@@ -3,18 +3,23 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "inferencelab-llm-eval-kit"
+name = "llm-eval-kit-v1"
 version = "0.1.0"
 authors = [
-    { name = "Mahrukh Baig", email = "mahrukhbaig11@gmail.com" }
+    { name = "Mahrukh Baig", email = "mahrukhbaig11@gmail.com" },
+    { name = "Muhammad Maaz" },
+    { name = "Warisha Arshad" },
+]
+maintainers = [
+    { name = "INFERENCE Lab" },
 ]
 description = "A lightweight, offline Python library for scoring LLM response quality. This project is made under the INFERENCE Lab engineering cohort 01."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.9"
 keywords = ["llm", "evaluation", "offline", "inference-lab", "cohort-01"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
