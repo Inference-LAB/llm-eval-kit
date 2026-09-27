@@ -10,34 +10,6 @@ Designed to fit seamlessly into CI/CD pipelines, this library helps automate pro
 
 ---
 
-## Authors & Maintainer
-
-- **Authors:**
-  - Mahrukh Baig
-  - Muhammad Maaz
-  - Warisha Arshad
-- **Maintainer:** [INFERENCE Lab](https://github.com/Inference-LAB)
-
-> **Note:** Developed under the **INFERENCE Lab Engineering Cohort 01**.
-
----
-
-## Dependencies
-
-`llm-eval-kit` requires **Python 3.9+** and uses the following dependencies:
-
-### Core Dependencies
-- **[`sentence-transformers`](https://pypi.org/project/sentence-transformers/) (`>=2.2.0`)**: Generates local dense semantic embeddings via `all-MiniLM-L6-v2` for cosine similarity, relevance, and grounding checks.
-- **[`scikit-learn`](https://pypi.org/project/scikit-learn/) (`>=1.0.0`)**: Powers vector computations and similarity metrics.
-- **[`typer`](https://pypi.org/project/typer/) (`>=0.9.0`)**: Provides the developer-friendly CLI interface (`llm-eval`).
-
-### Development & Testing Dependencies (Optional)
-Install via `pip install "llm-eval-kit-v1[dev]"`:
-- **[`pytest`](https://pypi.org/project/pytest/) (`>=7.0.0`)**: Test discovery and execution.
-- **[`pytest-cov`](https://pypi.org/project/pytest-cov/) (`>=4.0.0`)**: Test suite coverage analysis and reporting.
-
----
-
 ## Key Features
 
 - **100% Local & Private:** Runs entirely on your own machine using a shared local embedding model (`all-MiniLM-L6-v2`) via `sentence-transformers`.
@@ -58,6 +30,22 @@ pip install llm-eval-kit-v1
 ```
 
 *Note: On first run, the library will automatically download the local embedding model `all-MiniLM-L6-v2` (approx. 90MB) to your local cache. All subsequent executions run entirely offline.*
+
+---
+
+## Dependencies
+
+`llm-eval-kit` requires **Python 3.9+** and uses the following dependencies:
+
+### Core Dependencies
+- **[`sentence-transformers`](https://pypi.org/project/sentence-transformers/) (`>=2.2.0`)**: Generates local dense semantic embeddings via `all-MiniLM-L6-v2` for cosine similarity, relevance, and grounding checks.
+- **[`scikit-learn`](https://pypi.org/project/scikit-learn/) (`>=1.0.0`)**: Powers vector computations and similarity metrics.
+- **[`typer`](https://pypi.org/project/typer/) (`>=0.9.0`)**: Provides the developer-friendly CLI interface (`llm-eval`).
+
+### Development & Testing Dependencies (Optional)
+Install via `pip install "llm-eval-kit-v1[dev]"`:
+- **[`pytest`](https://pypi.org/project/pytest/) (`>=7.0.0`)**: Test discovery and execution.
+- **[`pytest-cov`](https://pypi.org/project/pytest-cov/) (`>=4.0.0`)**: Test suite coverage analysis and reporting.
 
 ---
 
@@ -223,3 +211,21 @@ Because `Evaluator.evaluate()` defaults to executing all registered criteria whe
 1. **Semantic Similarity != Factual Accuracy:** Grounding checks reflect semantic alignment with the provided context passage. A response can score high simply by repeating the vocabulary and structure of the context even if a key detail is wrong (mitigated by the numeric mismatch check).
 2. **Directional Refusals:** The `refusal_check` only identifies *whether* a refusal happened. It does not judge if the refusal was appropriate (e.g. refusing harmful prompts).
 3. **Implicit Aspects:** Heuristic aspect-splitting for completeness checks may miss implicit sub-questions in complex prompts.
+
+---
+
+## Authors & Maintainers
+
+- **Authors:**
+  - Mahrukh Baig (Lead Engineer)
+  - Muhammad Maaz (Research & Implementation Engineer)
+  - Warisha Arshad (Integration & Evaluation Engineer)
+- **Maintainer:** [INFERENCE Lab](https://github.com/Inference-LAB)
+
+> **Note:** Developed under the **INFERENCE Lab Engineering Cohort 01**.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
